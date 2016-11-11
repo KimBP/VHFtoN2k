@@ -1,3 +1,4 @@
+
 /*
   VHFtoN2k - converts a few NMEA0183 messages to NMEA2000 format.
 
@@ -21,76 +22,80 @@
 
 #include <Arduino.h>
 #include <Time.h>
-#include <N2kMsg.h>
-#include <NMEA2000.h>
+#include <SPI.h>
+#include <NMEA2000_CAN.h>
+//#include <N2kMsg.h>
+//#include <NMEA2000.h>
 #include <N2kMessages.h>
 #include <NMEA0183.h>
 #include <NMEA0183Msg.h>
 #include <NMEA0183Messages.h>
 #include <AIS.h>
-//#include "NMEA0183Handlers.h"
-//#include "BoatData.h"
+#include "NMEA0183Handlers.h"
+#include "BoatData.h"
+#include <mcp_can.h>
+#include <NMEA2000_mcp.h>
+//
+#define NMEA0183SrcId 3
 
-#include <due_can.h>  // https://github.com/collin80/due_can
-#include <NMEA2000_due.h>
-tNMEA2000_due NMEA2000;
-
-#define NMEA0183SourceGPSCompass 3
-#define NMEA0183SourceGPS 1
+#define N2K_Def_DevId 25
 
 tBoatData BoatData;
 
+ // The object handling NMEA2000 connection
+//tNMEA2000 NMEA2000;
+
+// The object handling NMEA0183 connection
+tNMEA0183 NMEA0183;
+
+// The latest received NMEA0183Msg
 tNMEA0183Msg NMEA0183Msg;
-tNMEA0183 NMEA0183_3;
 
 void setup() {
 
   // Setup NMEA2000 system
   Serial.begin(115200);
-  NMEA2000.SetProductInformation("00000008", // Manufacturer's Model serial code
-                                 107, // Manufacturer's product code
-                                 "NMEA0183 -> N2k -> PC",  // Manufacturer's Model ID
-                                 "1.0.0.1 (2015-11-18)",  // Manufacturer's Software version code
-                                 "1.0.0.0 (2015-11-18)" // Manufacturer's Model version
+  NMEA2000.SetProductInformation("00000111", // Manufacturer's Model serial code
+                                 111, // Manufacturer's product code
+                                 "VHFtoN2k",  // Manufacturer's Model ID
+                                 "1.0.0.1 (2016-10-17)",  // Manufacturer's Software version code
+                                 "1.0.0.0 (2015-10-17)" // Manufacturer's Model version
                                  );
-  // Det device information
-  NMEA2000.SetDeviceInformation(8, // Unique number. Use e.g. Serial number.
-                                130, // Device function=PC Gateway. See codes on http://www.nmea.org/Assets/20120726%20nmea%202000%20class%20%26%20function%20codes%20v%202.00.pdf
+  // Device information
+  NMEA2000.SetDeviceInformation(111, // Unique number. Use e.g. Serial number.
+                                135, // Device function=NMEA 0183 Gateway. See codes on http://www.nmea.org/Assets/20120726%20nmea%202000%20class%20%26%20function%20codes%20v%202.00.pdf
                                 25, // Device class=Inter/Intranetwork Device. See codes on http://www.nmea.org/Assets/20120726%20nmea%202000%20class%20%26%20function%20codes%20v%202.00.pdf
                                 2046 // Just choosen free from code list on http://www.nmea.org/Assets/20121020%20nmea%202000%20registration%20list.pdf                               
                                );
 
-  // NMEA2000.SetForwardType(tNMEA2000::fwdt_Text); // Show in clear text. Leave uncommented for default Actisense format.
-  NMEA2000.SetForwardSystemMessages(true);
-  NMEA2000.SetMode(tNMEA2000::N2km_ListenAndNode,25);
-  //NMEA2000.EnableForward(false);
+//  NMEA2000.SetForwardSystemMessages(true);
+  NMEA2000.SetMode(tNMEA2000::N2km_NodeOnly,N2K_Def_DevId);
+  NMEA2000.EnableForward(false); // Disable all msg forwarding to USB (=Serial)
   NMEA2000.Open();
 
   // Setup NMEA0183 ports and handlers
   InitNMEA0183Handlers(&NMEA2000, &BoatData);
-  NMEA0183_3.SetMsgHandler(HandleNMEA0183Msg);
+  NMEA0183.SetMsgHandler(HandleNMEA0183Msg);
 
-  NMEA0183_3.Begin(&Serial3,NMEA0183SourceGPSCompass, 19200);
+  NMEA0183.Begin(&Serial,NMEA0183SrcId, 19200);
 }
 
 void loop() {
   NMEA2000.ParseMessages();
-  NMEA0183_3.ParseMessages();
+  NMEA0183.ParseMessages();
+
+//  SendNMEA2000_AIS();  
+}
+/*
+void SendNMEA2000_AIS(void)
+{
+  if (!BoatData.updated) return;
   
-  SendSystemTime();
-}
-
-#define TimeUpdatePeriod 1000
-
-void SendSystemTime() {
-  static unsigned long TimeUpdated=millis();
   tN2kMsg N2kMsg;
-
-  if ( (TimeUpdated+TimeUpdatePeriod<millis()) && BoatData.DaysSince1970>0 ) {
-    SetN2kPGNSystemTime(N2kMsg, 0, BoatData.DaysSince1970, BoatData.GPSTime);
-    TimeUpdated=millis();
-    NMEA2000.SendMsg(N2kMsg);
-  }
+  
+//  void SetN2kAISClassAPosition(tN2kMsg &N2kMsg, uint8_t MessageID, tN2kAISRepeat Repeat, uint32_t UserID, double Latitude, double Longitude,
+//                        bool Accuracy, bool RAIM, uint8_t Seconds, double COG, double SOG, double Heading, double ROT, tN2kAISNavStatus NavStatus)
+  // TODO: COnvert format of boatdata - where?
+  SetN2kAISClassAPosition (N2kMsg, 
 }
-
-
+*/
