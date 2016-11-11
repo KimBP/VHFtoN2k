@@ -1,0 +1,23 @@
+[submodule "libraries/AIS"]
+	path = libraries/AIS
+	url = ../AIS.git
+
+[submodule "libraries/NMEA0183"]
+	path = libraries/NMEA0183
+	url = ../NMEA0183.git
+
+[submodule "libraries/NMEA2000"]
+	path = libraries/NMEA2000
+	url = ../NMEA2000.git
+
+[submodule "libraries/NMEA2000_mcp"]
+	path = libraries/NMEA2000_mcp
+	url = ../NMEA2000_mcp.git
+
+[submodule "libraries/Time"]
+	path = libraries/Time
+	url = ../Time.git
+
+[submodule "libraries/CAN_BUS_Shield"]
+	path = libraries/CAN_BUS_Shield
+	url = ../CAN_BUS_Shield.git
